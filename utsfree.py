@@ -18,6 +18,7 @@ def vigenere_encrypt(plain_text, key):
         char = chr((ord(plain_text[i]) + 1) % 256)
         key_char = key[i % key_length]
         encrypted_char = chr((ord(char) + ord(key_char)) % 256)
+        # encrypted_char = chr((ord(char) + ord(key_char) + random.randint(0, 255)) % 256)
         encrypted_text += encrypted_char
     return encrypted_text
 
@@ -48,70 +49,36 @@ def calculate_cer(original_text, decrypted_text):
     cer = num_errors / len(original_text)
     return cer
 
-def calculate_entropy(plain_text):
-    text_length = len(plain_text)
-    character_counts = collections.Counter(plain_text)
+def calculateCharacterFrequency(text):
+    frequencyMap = collections.defaultdict(int)
+
+    for c in text:
+        frequencyMap[c] += 1
+
+    return frequencyMap
+
+def calculate_entropy(cipher_text):
+    text_length = len(cipher_text)
+    character_counts = calculateCharacterFrequency(cipher_text)
+
     entropy = 0
     for count in character_counts.values():
         probability = count / text_length
-        entropy -= probability * math.log(probability, 2)
+        entropy -= probability * math.log2(probability) if probability > 0 else 0
+
     return entropy
 
-def calculate_avalanche_effect(original_text, key):
-    encrypted_text = vigenere_encrypt(original_text, key)
-    total_changes = 0
 
-    for i in range(len(original_text)):
-        modified_text = list(original_text)
-        for j in range(256):  # Try all possible changes
-            modified_text[i] = chr(j)
-            modified_encrypted_text = vigenere_encrypt(''.join(modified_text), key)
+def calculate_avalanche_effect(original_text, cipher_text):
+    if len(original_text) != len(cipher_text):
+        raise ValueError("Panjang teks asli dan teks terdekripsi harus sama")
 
-            differences = sum(1 for k in range(len(encrypted_text)) if encrypted_text[k] != modified_encrypted_text[k])
-            total_changes += differences
+    total_bits = len(original_text) * 8  # Assuming 8 bits per character
 
-    avalanche_effect = (total_changes / (len(original_text) * 256)) * 100  # Calculate in percentage
+    different_bits = sum(bin(ord(a) ^ ord(b)).count('1') for a, b in zip(original_text, cipher_text))
 
-    if avalanche_effect >= 50:
-        return avalanche_effect
-    else:
-        return None
-
-# Example usage
-original_text = st.text_input('Enter the message: ')  # Original text
-key = st.text_input('Enter the key: ')   # Vigenere key
-cipher_text = vigenere_encrypt(original_text, key)  # Encrypt the original text
-decrypted_text = vigenere_decrypt(cipher_text, key)  # Decrypt the encrypted text
-
-ber = calculate_ber(original_text, decrypted_text)
-cer = calculate_cer(original_text, decrypted_text)
-avalanche_effect = calculate_avalanche_effect(original_text, key)
-entropy = calculate_entropy(cipher_text)
-ber_str = str(int(ber * 10000))
-cer_str = str(int(cer * 10000))
-
-if avalanche_effect is not None:
-    avalanche_effect_str = str(int(round(avalanche_effect)))
-else:
-    avalanche_effect_str = "Avalanche Effect < 50%"
-
-if st.button('Encrypt/Decrypt', type="primary"):
-    st.write(f'Original Text: {original_text}')
-    st.write(f'Encrypted Text: {cipher_text}')
-    st.write(f'Decrypted Text: {decrypted_text}')
-    st.write(f'Bit Error Rate (BER): {ber_str}')
-    st.write(f'Character Error Rate (CER): {cer_str}')
-    st.write(f'Avalanche Effect: {avalanche_effect_str}')
-    st.write('Perform Encryption and Decryption')
-    st.write(f"Entropy of Encrypted Text: {entropy:.4f} bits per character")
-
-else:
-    st.write('Perform Encryption and Decryption')
-This code will only display the Avalanche Effect (AE) when it's greater than or equal to 50%, and it will show "Avalanche Effect < 50%" if the AE is below 50%.
-
-
-
-
+    avalanche_effect = (different_bits / total_bits) * 100
+    return avalanche_effect
 
 
 
@@ -124,11 +91,11 @@ decrypted_text = vigenere_decrypt(cipher_text, key)  # Dekripsi teks terenkripsi
 
 ber = calculate_ber(original_text, decrypted_text)
 cer = calculate_cer(original_text, decrypted_text)
-avalanche_effect = calculate_avalanche_effect(original_text, key)
+avalanche_effect = calculate_avalanche_effect(original_text, cipher_text)
 entropy = calculate_entropy(cipher_text)
-ber_str = str(int(ber * 10000))
-cer_str = str(int(cer * 10000))
-avalanche_effect_str = str(int(round(avalanche_effect)))
+ber_str = str(int(ber * 100))
+cer_str = str(int(cer * 100))
+avalanche_effect_str = f"{avalanche_effect:.2f}"
 
 if st.button('Enkripsi/Dekripsi', type="primary"):
     st.write(f'Teks Asli: {original_text}')
