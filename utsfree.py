@@ -62,15 +62,57 @@ def calculate_avalanche_effect(original_text, key):
 
     for i in range(len(original_text)):
         modified_text = list(original_text)
-        for j in range(256):  # Coba semua kemungkinan perubahan
+        for j in range(256):  # Try all possible changes
             modified_text[i] = chr(j)
             modified_encrypted_text = vigenere_encrypt(''.join(modified_text), key)
 
             differences = sum(1 for k in range(len(encrypted_text)) if encrypted_text[k] != modified_encrypted_text[k])
             total_changes += differences
 
-    avalanche_effect = (total_changes / (len(original_text) * 256)) * 100  # Hitung dalam persentase
-    return avalanche_effect
+    avalanche_effect = (total_changes / (len(original_text) * 256)) * 100  # Calculate in percentage
+
+    if avalanche_effect >= 50:
+        return avalanche_effect
+    else:
+        return None
+
+# Example usage
+original_text = st.text_input('Enter the message: ')  # Original text
+key = st.text_input('Enter the key: ')   # Vigenere key
+cipher_text = vigenere_encrypt(original_text, key)  # Encrypt the original text
+decrypted_text = vigenere_decrypt(cipher_text, key)  # Decrypt the encrypted text
+
+ber = calculate_ber(original_text, decrypted_text)
+cer = calculate_cer(original_text, decrypted_text)
+avalanche_effect = calculate_avalanche_effect(original_text, key)
+entropy = calculate_entropy(cipher_text)
+ber_str = str(int(ber * 10000))
+cer_str = str(int(cer * 10000))
+
+if avalanche_effect is not None:
+    avalanche_effect_str = str(int(round(avalanche_effect)))
+else:
+    avalanche_effect_str = "Avalanche Effect < 50%"
+
+if st.button('Encrypt/Decrypt', type="primary"):
+    st.write(f'Original Text: {original_text}')
+    st.write(f'Encrypted Text: {cipher_text}')
+    st.write(f'Decrypted Text: {decrypted_text}')
+    st.write(f'Bit Error Rate (BER): {ber_str}')
+    st.write(f'Character Error Rate (CER): {cer_str}')
+    st.write(f'Avalanche Effect: {avalanche_effect_str}')
+    st.write('Perform Encryption and Decryption')
+    st.write(f"Entropy of Encrypted Text: {entropy:.4f} bits per character")
+
+else:
+    st.write('Perform Encryption and Decryption')
+This code will only display the Avalanche Effect (AE) when it's greater than or equal to 50%, and it will show "Avalanche Effect < 50%" if the AE is below 50%.
+
+
+
+
+
+
 
 # Contoh penggunaan
 original_text = st.text_input('Enter the message: ')  # Teks asli
